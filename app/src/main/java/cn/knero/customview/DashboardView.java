@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.util.AttributeSet;
@@ -28,6 +29,9 @@ public class DashboardView extends View {
 
     private Paint mLinearCirclePaint;
     private int mSplit = -1;
+
+    private Paint mTextLinePaint;
+    private Paint mTextPaint;
 
     public DashboardView(Context context) {
         super(context);
@@ -58,18 +62,74 @@ public class DashboardView extends View {
         mPointAngle += mSplit;
         if (mPointAngle < -45) {
             mSplit = 1;
-        } else if (mPointAngle > 225){
+        } else if (mPointAngle > 225) {
             mSplit = -1;
         }
         postInvalidateDelayed(30);
     }
 
     private void drawTextAndLine(Canvas canvas) {
+
+        if (mTextPaint == null) {
+            mTextPaint = new Paint();
+            mTextPaint.setAntiAlias(true);
+            mTextPaint.setDither(true);
+            mTextPaint.setStrokeWidth(2);
+            mTextPaint.setColor(0xFFC3C8CA);
+            mTextPaint.setTextSize(20);
+        }
+        if (mTextLinePaint == null) {
+            mTextLinePaint = new Paint();
+            mTextLinePaint.setAntiAlias(true);
+            mTextLinePaint.setDither(true);
+            mTextLinePaint.setStrokeWidth(2);
+            mTextLinePaint.setColor(0xFFE4E4E4);
+        }
+        drawLine(canvas, -45, "");
+        drawLine(canvas, -25, "10M");
+        drawLine(canvas, 5, "5M");
+        drawLine(canvas, 45, "1M");
+        drawLine(canvas, 90, "512K");
+        drawLine(canvas, 135, "256K");
+        drawLine(canvas, 180, "128K");
+        drawLine(canvas, 225, "0K");
+    }
+
+    private void drawLine(Canvas canvas, int angle, String text) {
+        double sinx = Math.sin(angle * Math.PI / 180);
+        double cosx = Math.cos(angle * Math.PI / 180);
         float centerX = getWidth() / 2;
         float centerY = getHeight() / 2;
         float circleRadius = mPointRadius + 40;
+        float longCircleRadius = circleRadius + 15;
+        canvas.drawLine((float) (centerX + circleRadius * cosx),
+                (float) (centerY - circleRadius * sinx),
+                (float) (centerX + longCircleRadius * cosx),
+                (float) (centerY - longCircleRadius * sinx), mTextLinePaint);
 
+        Rect bounds = new Rect();
+        mTextPaint.getTextBounds(text, 0, text.length(), bounds);
+        float startX;
+        float startY;
+        float textRadius = longCircleRadius + 5;
+        if (angle == 90) {
+            startX = (float) (centerX + textRadius * cosx) - bounds.width() / 2;
+        } else if (cosx / Math.abs(cosx) == 1) {
+            startX = (float) (centerX + textRadius * cosx);
+        } else {
+            startX = (float) (centerX + textRadius * cosx) - bounds.width();
+        }
+
+        if (angle == 90) {
+            startY = (float) (centerY - textRadius * sinx) - bounds.height() / 2;
+        } else if (angle == 0 || sinx / Math.abs(sinx) == 1) {
+            startY = (float) (centerY - textRadius * sinx + bounds.height() / 2);
+        } else {
+            startY = (float) (centerY - textRadius * sinx) + bounds.height();
+        }
+        canvas.drawText(text, 0, text.length(), startX, startY, mTextPaint);
     }
+
 
     private void drawLinearCircle(Canvas canvas) {
         float centerX = getWidth() / 2;
